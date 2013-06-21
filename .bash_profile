@@ -1,5 +1,6 @@
 alias ln-status='git status'
 alias ln-branch='git branch'
+alias ln-branch='git merge'
 alias ln-stash='git stash'
 alias ln-diff='git diff'
 alias ln-checkout='git checkout'
@@ -53,17 +54,17 @@ function ln-push() {
 	else 
 		
 		STATUS=`git status 2>&1`
-		if [[ "$STATUS" != *'working directory clean'* ]]
-	        then
-	            echo "You still have uncommitted files.  Push Aborted"
-	            return 0
-	        else
+		if [[ "$STATUS" != *'working directory clean'* && "$STATUS" != *'Untracked files'* ]]
+		then
+			echo "You still have uncommitted files.  Push Aborted"
+			return 0
+		else
 			if [[ "$STATUS" == *'Your branch is ahead'* ]]
 			then
 				# ok Go!
-                
-	                	LAST_TAG=`git describe --abbrev=0 --tags`
-					
+				if [ "$BRANCH" == "dev" ]; then                
+					LAST_TAG=`git describe --abbrev=0 --tags`
+	
 					if [[ ! -z $LAST_TAG ]]; then
 				
 						OIFS=$IFS
@@ -86,22 +87,28 @@ function ln-push() {
 								
 								if ! grep -q "$NEW_VERSION" <<< "$REMOTE_TAGS" ; then
 									echo "New Version: $NEW_VERSION"
-									#git tag -a "$NEW_VERSION" -m "Version: $NEW_VERSION"
+									git tag -a "$NEW_VERSION" -m "Version: $NEW_VERSION"
 									break
 								fi
 							done
 						else 
 							echo "Tagging New Version: $NEW_VERSION"
-							#git tag -a "$NEW_VERSION" -m "Version: $NEW_VERSION"
+							git tag -a "$NEW_VERSION" -m "Version: $NEW_VERSION"
 						fi
 					else 
 						echo "Could not increment version.  Please update tag manually using git tag then try ln-push again.  See git -h for help"
 					fi
 					
-					#CMD="git push $REMOTE $BRANCH --tags"
-					#$CMD
-                
-            		elif [[ "$STATUS" == *'have diverged'* ]]
+					CMD="git push $REMOTE $BRANCH --tags"
+					$CMD
+					
+					return 1
+				fi
+				
+				CMD="git push $REMOTE $BRANCH"
+				$CMD
+				
+			elif [[ "$STATUS" == *'have diverged'* ]]
 			then
 				echo "$REMOTE/$BRANCH and your local branch: $BRANCH have diverged.  Please pull,merge with $REMOTE/$BRANCH, then try again"
 				return 0
@@ -117,7 +124,7 @@ function ln-push() {
 function ln-commit() {
 	if [ -z "$1" ]; then
 		echo "You must specify a commit message.  Try \"ln-commit -h\" for help"
-                return 0
+		return 0
 	fi
 
 	CMD="git commit -m "
