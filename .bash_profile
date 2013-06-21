@@ -1,6 +1,6 @@
 alias ln-status='git status'
 alias ln-branch='git branch'
-alias ln-branch='git merge'
+alias ln-merge='git merge'
 alias ln-stash='git stash'
 alias ln-diff='git diff'
 alias ln-checkout='git checkout'
